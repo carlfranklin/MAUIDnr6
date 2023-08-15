@@ -1,0 +1,78 @@
+﻿@page "/details/{ShowNumber}"
+
+<span @onclick="AppState.NavigateHome" class="oi oi-arrow-left"
+      style="zoom:2;" aria-hidden="true"></span>
+
+@if (AppState.PlayingPlayList)
+{
+    <h3>Playlist: @AppState.SelectedPlayList.Name (@AppState.PlaylistShowIndex of @AppState.PlaylistShowCount)</h3>
+}
+
+@if (AppState.ThisShow != null)
+{
+    <h4>@AppState.ThisShow.ShowTitle</h4>
+    <span style="font-weight:bold;">
+        Episode @AppState.ThisShow.ShowNumber published @AppState.ThisShow.DatePublished.ToLongDateString()
+    </span>
+
+    <div>
+        @AppState.ThisShow.Description;
+    </div>
+    <br />
+
+    <img class="@AppState.RewindButtonClass"
+         style="width: 50px;opacity: @AppState.ControlsOpacity;"
+     @onclick="AppState.Rewind" src="rewind.png" />
+
+    <img class="@AppState.PlayButtonClass"
+         style="width: 50px;opacity: @AppState.PlayOpacity;"
+     @onclick="AppState.PlayAudio" src="play.png" />
+
+    <img class="@AppState.PauseButtonClass"
+         style="width: 50px;opacity: @AppState.ControlsOpacity;"
+     @onclick="AppState.PauseAudio" src="pause.png" />
+
+    <img class="@AppState.StopButtonClass"
+         style="width: 50px;opacity: @AppState.ControlsOpacity;"
+     @onclick="AppState.StopAudio" src="stop.png" />
+
+    <img class="@AppState.ForwardButtonClass"
+         style="width: 50px;opacity: @AppState.ControlsOpacity;"
+     @onclick="AppState.Forward" src="ffwd.png" />
+
+    @*uncomment to use the Scoot button for testing*@
+    <button @onclick="@AppState.Scoot">Scoot</button>
+
+    <br />
+    <progress style="width: 100%; height: 50px;" max="100"
+              value="@AppState.Percentage"></progress>
+    <br />
+    <div> @AppState.AudioMessage @AppState.PlayPosition</div>
+
+    <br />
+    @if (AppState.ThisShow.ShowDetails.Guests != null)
+    {
+        @foreach (var guest in AppState.ThisShow.ShowDetails.Guests)
+        {
+            <h3>@guest.Name</h3>
+            <div style="padding:20px;">
+                <img src="@guest.PhotoUrl" style="width:160px;padding-right:10px;padding-bottom:10px;float:left;" />
+                <div>@guest.Bio</div>
+            </div>
+            <br clear="left" />
+        }
+    }
+
+    @if (AppState.ThisShow.ShowDetails.Links != null)
+    {
+        <h3>Links:</h3>
+        <div style="padding-left:20px;">
+            @foreach (var link in AppState.ThisShow.ShowDetails.Links)
+            {
+                <a style="padding-bottom:10px;" target="_blank" href="@link.Url">@link.Text</a>
+                <br />
+            }
+        </div>
+        <br />
+    }
+}
