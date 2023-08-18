@@ -85,7 +85,7 @@
 
 @foreach (var show in AppState.AllShows)
 {
-    <div disabled="@Downloading" @onclick="(() => NavigateToDetailPage(show.ShowNumber))">
+    <div disabled="@Downloading" style="cursor:pointer;" @onclick="(() => NavigateToDetailPage(show.ShowNumber))">
         <h4>@show.ShowTitle</h4>
     </div>
     <div style="font-size:small;">

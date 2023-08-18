@@ -42,7 +42,7 @@ If you search for a term that yields no results, I now display "No episodes matc
 
 Every description ended with a semicolon. I removed that.
 
-If you are not online, you click on the title or description to show the details, and you have not downloaded the show details, a dialog pops up saying "You are not online."
+If you are not online, you click on the title to show the details, and you have not downloaded the show details, a dialog pops up saying "You are not online."
 
 The show description did not display correctly if it contained html markup.
 
