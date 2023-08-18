@@ -2,110 +2,77 @@
 
 <div>
     <span @onclick="NavigateHome" class="oi oi-arrow-left"
-          style="zoom:2;" aria-hidden="true"></span>
+          style="zoom:2;cursor:pointer;" aria-hidden="true"></span>
 </div>
 
 <h3>Manage Playlists</h3>
 
-@if (AppState.SelectedPlayList != null)
-{
-    <h4>
-        Current PlayList:
-        @AppState.SelectedPlayList.Name
-        (@AppState.SelectedPlayList.Shows.Count)
-    </h4>
-}
+
+<div class="centered-container">
+    Current PlayList:
+    @if (AppState.SelectedPlayList != null)
+    {
+        <span>@AppState.SelectedPlayList.Name (@AppState.SelectedPlayList.Shows.Count)</span>
+        <span class="oi oi-circle-x" style="padding-left:10px;zoom:2;cursor:pointer;" aria-hidden="true" @onclick="DeselectPlaylist"></span>
+    }
+    else
+    {
+        <span>none</span>
+    }
+</div>
 <br />
 
 @if (AppState.PlayLists.Count > 0)
 {
     <h4>Playlists:</h4>
-    <select class="form-control" @onchange="PlayListSelected"
-        @onclick="PlayListsClicked" style="width:100%;">
-        @foreach (var playList in AppState.PlayLists)
-        {
-            if (AppState.SelectedPlayList != null
-            && @playList == AppState.SelectedPlayList)
-            {
-                <option selected value="@playList.Id">
-                    @playList.Name (@playList.Shows.Count)
-                </option>
-            }
-            else
-            {
-                <option value="@playList.Id">
-                    @playList.Name (@playList.Shows.Count)
-                </option>
-            }
-        }
-    </select>
+
+    <CustomList MaxHeight="200px" Items=PlayListItems ItemSelected="PlayListSelected" />
+
     <br />
     <br />
 }
 <div>
     <button disabled="@CommandButtonsDisabled" class="btn btn-primary"
-            @onclick="AddButtonClicked">
+    @onclick="AddButtonClicked">
         Add
     </button>
     @if (AppState.SelectedPlayList != null)
     {
         <span>&nbsp;</span>
         <button disabled="@CommandButtonsDisabled" class="btn btn-primary"
-            @onclick="EditButtonClicked">
+        @onclick="EditButtonClicked">
             Edit
         </button>
         <span>&nbsp;</span>
         <button disabled="@CommandButtonsDisabled" class="btn btn-danger"
-            @onclick="DeleteButtonClicked">
+        @onclick="DeleteButtonClicked">
             Delete
         </button>
     }
 </div>
 <br />
 
-@if (PlaylistEditAction != PlaylistEditAction.None)
+@if (AppState.SelectedPlayList != null && AppState.SelectedPlayList.Shows.Count > 0)
 {
-    <EditForm Model="PlayListToAddOrEdit" 
-        OnValidSubmit="SubmitPlayListClicked">
-        <DataAnnotationsValidator />
-
-        Name:
-        <br />
-        <InputText id="InputName" 
-            @bind-Value="@PlayListToAddOrEdit.Name" />
-        <br />
-        <br />
-        <button class="btn btn-primary" type="submit">Submit</button>
-        <span>&nbsp;</span>
-        <button @onclick="CancelButtonPressed" class="btn btn-secondary"
-            type="button">
-            Cancel
-        </button>
-
-        <ValidationSummary />
-    </EditForm>
-
-    @if (PlayListToAddOrEdit.Shows.Count > 0)
+    <h3>Shows in Playlist:</h3>
+    <br />
+    @foreach (var show in AppState.SelectedPlayList.Shows)
     {
-        <br />
-        <br />
-        @foreach (var show in PlayListToAddOrEdit.Shows)
-        {
-            <div style="padding:4px;">
-                @if (@show != @PlayListToAddOrEdit.Shows.First())
-                {
-                    <span @onclick="() => MoveUp(show)" class="oi oi-arrow-top"
-          style="padding-right:4px;" aria-hidden="true"></span>
-                }
-                @if (@show != @PlayListToAddOrEdit.Shows.Last())
-                {
-                    <span @onclick="() => MoveDown(show)" class="oi oi-arrow-bottom"
-          style="padding-right:4px;" aria-hidden="true"></span>
-                }
-                @show.ShowTitle
-            </div>
-        }
+        <div style="padding:4px;">
+            @if (@show != @AppState.SelectedPlayList.Shows.First())
+            {
+                <span @onclick="() => MoveUp(show)" class="oi oi-arrow-top"
+                      style="float:left;padding-right:4px;zoom:2;width:30px;cursor:pointer;" aria-hidden="true"></span>
+            }
+            @if (@show != @AppState.SelectedPlayList.Shows.Last())
+            {
+                <span @onclick="() => MoveDown(show)" class="oi oi-arrow-bottom"
+                      style="float:left;padding-right:4px;zoom:2;width:30px;cursor:pointer;" aria-hidden="true"></span>
+            }
+            <span style="word-wrap:break-word;">@show.ShowTitle</span>
+            <br style="clear:both;" />
+        </div>
     }
-    <br />
-    <br />
 }
+<br />
+<br />

@@ -1,4 +1,6 @@
-﻿using MAUIDnr1.Shared;
+﻿using Blazored.Modal;
+using Blazored.Modal.Services;
+using System.Runtime.CompilerServices;
 
 namespace MAUIDnr1.Pages;
 public partial class Index : ComponentBase
@@ -9,13 +11,22 @@ public partial class Index : ComponentBase
     [Inject]
     private ApiService _apiService { get; set; }
 
+    [Inject]
+    private IJSRuntime _jsRuntime { get; set; }
+
     [CascadingParameter]
     public CascadingAppState AppState { get; set; }
+
+    [CascadingParameter]
+    public IModalService Modal { get; set; } = default!;
+
 
     // we read 20 records at a time when loading more shows
     private int RecordsToRead { get; set; } = 20;
 
-    protected string StatusMessage {get; set;} = string.Empty;
+    protected string StatusMessage { get; set; } = string.Empty;
+
+    protected string MoreMessage { get; set;} = "More";
 
     protected bool Downloading = false;
 
@@ -36,7 +47,6 @@ public partial class Index : ComponentBase
                 // Make sure we are showing all the shows
                 AppState.ShowPlayListOnly = false;
                 AppState.ShowPlayListOnlyText = "Show Playlist";
-
                 AppState.EpisodeFilter = value;
                 AppState.LastShowNumber = 0;
                 AppState.AllShows.Clear();
@@ -52,8 +62,18 @@ public partial class Index : ComponentBase
                     // Update the UI
                     StateHasChanged();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                }
             }
+        }
+    }
+
+    public void ShutUp()
+    {
+        if (AppState.ThisShow != null)
+        {
+            AppState.StopAudio();
         }
     }
 
@@ -98,18 +118,27 @@ public partial class Index : ComponentBase
         if (!AppState.IsOnline) return;
         if (AppState.SelectedPlayList == null) return;
         Downloading = true;
+		AppState.HideHeader = true;
+		var options = new ModalOptions
+        {
+            HideCloseButton = false,
+            DisableBackgroundCancel = true,
+            HideHeader = true
+        };
+        var loading = Modal.Show<Loading>(string.Empty, options);
 
         // This is where we are storing local audio files
         string cacheDir = FileSystem.Current.CacheDirectory;
         int count = 0;
         int total = PlaylistEpisodesNotDownloaded;
+
         foreach (var show in AppState.SelectedPlayList.Shows)
         {
             if (!IsDownloaded(show))
             {
                 // download to cache
                 count++;
-                StatusMessage = $"Downloading {count} of {total}";
+                AppState.DownloadingMessage = $"Downloading {count} of {total}";
                 await InvokeAsync(StateHasChanged);
 
                 // Download the show with details so the data is cached
@@ -136,7 +165,10 @@ public partial class Index : ComponentBase
                 }
             }
         }
-        StatusMessage = "";
+
+        loading.Close();
+		AppState.HideHeader = false;
+        AppState.DownloadingMessage = "";
         Downloading = false;
     }
 
@@ -146,20 +178,10 @@ public partial class Index : ComponentBase
         _navigationManager.NavigateTo(url);
     }
 
-
-    /// <summary>
-    /// Disable the reset (filter) button if the
-    /// EpisodeFilter property is not set
-    /// </summary>
-    protected bool ResetButtonDisabled
-    {
-        get => (EpisodeFilter == "");
-    }
-
     /// <summary>
     /// Reset button was selected
     /// </summary>
-    protected void ResetFilter()
+    protected async Task ResetFilter()
     {
         // Make sure we are showing all the shows
         AppState.ShowPlayListOnly = false;
@@ -169,6 +191,7 @@ public partial class Index : ComponentBase
         AppState.ShowNumbers.Clear();
         AppState.AllShows.Clear();
         EpisodeFilter = "";
+        await _jsRuntime.InvokeVoidAsync("SetFocus", "filter");
     }
 
     /// <summary>
@@ -177,13 +200,25 @@ public partial class Index : ComponentBase
     /// <returns></returns>
     protected async Task GetNextBatchOfFilteredShows()
     {
+        AppState.Loading = true;
+
         // get the next batch
         var nextBatch = await
             _apiService.GetFilteredShows(EpisodeFilter,
                 AppState.AllShows.Count, RecordsToRead);
+        
+        AppState.Loading = false;
 
         // bail if we didn't return any
-        if (nextBatch == null || nextBatch.Count == 0) return;
+        if (nextBatch == null || nextBatch.Count == 0)
+        {
+            if (AppState.AllShows.Count == 0)
+            {
+                StatusMessage = "No epsiodes match your filter";
+            }
+            AppState.NoMoreShowsInSet = true;
+            return;
+        }
 
         // Add them to the list.
         // NOTE: ObservableCollection<> does not implement AddRange
@@ -191,6 +226,13 @@ public partial class Index : ComponentBase
         {
             AppState.AllShows.Add(show);
         }
+
+        // get the count:
+        var count = await _apiService.GetCount(EpisodeFilter);
+
+        AppState.NoMoreShowsInSet = (AppState.AllShows.Count == count);
+
+        StatusMessage = string.Empty;
     }
 
     /// <summary>
@@ -199,8 +241,31 @@ public partial class Index : ComponentBase
     /// <returns></returns>
     protected async Task LoadMoreShows()
     {
+        MoreMessage = "Loading...";
+        await InvokeAsync(StateHasChanged);
         AppState.GetOnlineStatus();
-        await GetNextBatchOfShows();
+        if (AppState.IsOnline)
+        {
+            await GetNextBatchOfShows();
+            StatusMessage = "";
+        }
+        else
+        {
+            await ShowOfflineMessageBox();
+        }
+        MoreMessage = "More";
+    }
+
+    private async Task ShowOfflineMessageBox()
+    {
+        var options = new ModalOptions()
+        {
+            Position = ModalPosition.Middle,
+            HideCloseButton = true
+        };
+        var msgModal = Modal.Show<MessageBox>("You are offline.", options);
+        await msgModal.Result;
+        StatusMessage = "You are offline";
     }
 
     /// <summary>
@@ -209,6 +274,10 @@ public partial class Index : ComponentBase
     /// <returns></returns>
     protected async Task GetNextBatchOfShows()
     {
+        AppState.NoMoreShowsInSet = false;
+        //StatusMessage = "Loading...";
+        //await InvokeAsync(StateHasChanged);
+
         // Filter?
         if (EpisodeFilter != "")
         {
@@ -216,6 +285,8 @@ public partial class Index : ComponentBase
             await GetNextBatchOfFilteredShows();
             return;
         }
+
+        AppState.Loading = true;
 
         // No shows loaded?
         if (AppState.ShowNumbers.Count == 0)
@@ -243,8 +314,13 @@ public partial class Index : ComponentBase
         // get the next batch
         var nextBatch = await _apiService.GetByShowNumbers(request);
 
+        AppState.Loading = false;
+
         // bail if nothing is returned
-        if (nextBatch == null || nextBatch.Count == 0) return;
+        if (nextBatch == null || nextBatch.Count == 0) {
+            AppState.NoMoreShowsInSet = (nextBatch.Count < RecordsToRead);
+            return;
+        }
 
         // Add to AllShows.
         // NOTE: ObservableCollection<> does NOT implement AddRange
@@ -255,16 +331,29 @@ public partial class Index : ComponentBase
 
         // Set the LastShowNumber
         AppState.LastShowNumber = nextBatch.Last<Show>().ShowNumber;
+
+        StatusMessage = string.Empty;
     }
 
     /// <summary>
     /// Show the details
     /// </summary>
     /// <param name="ShowNumber"></param>
-    protected void NavigateToDetailPage(int ShowNumber)
+    protected async void NavigateToDetailPage(int ShowNumber)
     {
-        var url = $"details/{ShowNumber}";
-        _navigationManager.NavigateTo(url);
+        var thisShow = AppState.AllShows.Where(x => x.ShowNumber == ShowNumber).FirstOrDefault();
+        if (thisShow == null) return;
+
+        AppState.GetOnlineStatus();
+        if(AppState.IsOnline || thisShow.ShowDetails != null)
+        {
+            var url = $"details/{ShowNumber}";
+            _navigationManager.NavigateTo(url);
+        }
+        else
+        {
+            await ShowOfflineMessageBox();
+        }
     }
 
     /// <summary>
@@ -290,6 +379,5 @@ public partial class Index : ComponentBase
             await GetNextBatchOfShows();
         }
     }
-
 
 }

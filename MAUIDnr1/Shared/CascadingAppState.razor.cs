@@ -6,6 +6,11 @@ using Windows.Graphics;
 
 namespace MAUIDnr1.Shared;
 
+/// <summary>
+/// CascadingAppState replaced the static AppState class in the MauiDnr1 project.
+/// All of the code to manage playing audio was moved here from Details.razor.cs,
+/// the code-behind for Details.razor.
+/// </summary>
 public partial class CascadingAppState : ComponentBase
 {
 
@@ -26,6 +31,38 @@ public partial class CascadingAppState : ComponentBase
 
     [Inject]
     private ApiService _apiService { get; set; }
+
+    bool hideHeader = false;
+    public bool HideHeader
+    {
+        get => hideHeader;
+        set
+        {
+            hideHeader = value;
+            StateHasChanged();
+        }
+    }
+
+    bool loading = false;
+    public bool Loading
+    {
+        get => loading;
+        set
+        {
+            loading = value;
+        }
+    }
+
+    string downloadingMessage = "";
+    public string DownloadingMessage
+    {
+        get => downloadingMessage;
+        set
+        {
+            downloadingMessage = value;
+            StateHasChanged();
+        }
+    }
 
     // media player
     public IAudioPlayer? Player = null;
@@ -267,6 +304,7 @@ public partial class CascadingAppState : ComponentBase
     private static int LastShowNumberBackup;
     private static string BackupEpisodeFilter { get; set; } = "";
 
+    public bool NoMoreShowsInSet { get; set; } = false;
 
     // tells the UI (and therefore the ApiService) whether or
     // not we are online. 
@@ -303,8 +341,9 @@ public partial class CascadingAppState : ComponentBase
         if (MediaState == MediaState.Playing)
         {
             PlayingPlayList = false;
-            Player.Stop();
             SetState(MediaState.Stopped);
+            Task.Delay(100).Wait();
+            Player.Stop();
         }
     }
 
@@ -478,6 +517,8 @@ public partial class CascadingAppState : ComponentBase
 
     public async Task Cleanup()
     {
+        await Task.Delay(100);
+
         SetState(MediaState.Stopped);
         // dispose the stream
         Stream?.Dispose();
@@ -572,7 +613,7 @@ public partial class CascadingAppState : ComponentBase
     }
 
     /// <summary>
-    /// Remove every show in AllShows from the selected playlsit
+    /// Remove every show in AllShows from the selected playlist
     /// </summary>
     public void RemoveAllFromPlaylist()
     {

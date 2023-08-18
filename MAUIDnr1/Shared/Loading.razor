@@ -1,0 +1,20 @@
+﻿<style>
+    img {
+        width: 80px;
+        height: 80px;
+        margin-top: 10px;
+    }
+</style>
+<div class="centered-fullscreen-container">
+    <p>@AppState.DownloadingMessage</p>
+    <img src="/loading.gif" />
+</div>
+
+
+@code {
+
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+
+    [CascadingParameter]
+    public CascadingAppState AppState { get; set; }
+}

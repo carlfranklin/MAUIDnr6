@@ -1,0 +1,30 @@
+﻿@if (!AppState.HideHeader)
+{
+    <div class="top-menu">
+        <nav>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                    Home
+                </NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="/playlists">
+                    Playlists
+                </NavLink>
+            </div>
+        </nav>
+    </div>
+}
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    
+    [CascadingParameter]
+    public CascadingAppState AppState { get; set; }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

@@ -1,0 +1,37 @@
+<style>
+    .custom-list {
+        max-height: @MaxHeight;
+        overflow-y: auto;
+        border: 1px solid #aaa;
+        border-radius: 5px;
+    }
+
+    .custom-option {
+        padding: 10px;
+        cursor: pointer;
+        background-color: #ffffff;
+    }
+
+    .custom-selected-option {
+        padding: 10px;
+        cursor: pointer;
+        background-color: #f0f0f0;
+    }
+
+
+</style>
+
+
+<div class="custom-list">
+    @foreach (var item in Items)
+    {
+        if (item.Selected)
+        {
+            <div class="custom-selected-option">@item.Text</div>
+        }
+        else
+        {
+            <div class="custom-option" @onclick="() => SelectItem(item)">@item.Text</div>
+        }
+    }
+</div>

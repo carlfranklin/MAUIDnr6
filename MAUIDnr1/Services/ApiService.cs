@@ -138,6 +138,37 @@ public class ApiService
         }
     }
 
+    public async Task<int> GetCount(string ShowFilter)
+    {
+        var fileName = $"{FileSystem.Current.CacheDirectory}\\showsCount.json";
+        try
+        {
+            if (IsOnline)
+            {
+                // We have an Internet connection.
+                string Url = $"{ShowName}/{ShowFilter}/getfilteredcount";
+                var result = await httpClient.GetAsync(Url);
+                result.EnsureSuccessStatusCode();
+                var response = await result.Content.ReadAsStringAsync();
+                // Save the count to showsCount.json
+                System.IO.File.WriteAllText(fileName, response);
+                return Convert.ToInt32(response);
+            }
+            else if (System.IO.File.Exists(fileName))
+            {
+                // Read and return the value from our offline file
+                var countString = System.IO.File.ReadAllText(fileName);
+                return Convert.ToInt32(countString);
+            }
+            else
+                return 0;
+        }
+        catch (Exception ex)
+        {
+            return 0;
+        }
+    }
+
     public async Task<int> GetCount()
     {
         var fileName = $"{FileSystem.Current.CacheDirectory}\\showsCount.json";

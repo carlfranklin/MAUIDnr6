@@ -7,6 +7,7 @@ global using Microsoft.JSInterop;
 global using Newtonsoft.Json;
 global using System.Collections.ObjectModel;
 global using System.Text;
+using Blazored.Modal;
 
 namespace MAUIDnr1;
 
@@ -23,6 +24,7 @@ public static class MauiProgram
             });
 
         builder.Services.AddMauiBlazorWebView();
+        builder.Services.AddBlazoredModal();
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
 #endif
